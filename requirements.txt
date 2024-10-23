@@ -1,0 +1,6 @@
+langgraph
+colorama
+termcolor
+requests
+python-dotenv
+tenacity
