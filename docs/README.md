@@ -55,6 +55,21 @@ To begin using **Terminal Agent**, follow these steps:
 
 ### Usage Example
 
+## **Task: Change the system from light to dark mode**
+```plaintext
+Enter your query: Can you change the system currently in light mode can change it to dark mode           
+Thought: I need to use a command to change the system theme to dark mode. I will use the powershell command to achieve this.
+Action Name: Shell Tool
+Action Input: {'shell': 'powershell', 'command': 'Set-ItemProperty -Path HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize -Name AppsUseLightTheme -Value 0'}
+Observation: 
+Thought: The command to change the theme to dark mode has been executed. Now I need to execute another command to change the system theme to dark mode as well.
+Action Name: Shell Tool
+Action Input: {'shell': 'powershell', 'command': 'Set-ItemProperty -Path HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize -Name SystemUsesLightTheme -Value 0'}
+Observation: 
+Thought: I have executed the necessary commands to change the system theme to dark mode. I am confident that the task is complete.
+Final Answer: The system theme has been changed to dark mode.
+```
+
 ## **Task: Asking about GPU present in the Machine**
 ```plaintext
 Enter your query: Can you tell me which all graphics card I have in this machine?

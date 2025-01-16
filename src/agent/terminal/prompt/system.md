@@ -28,7 +28,8 @@ Use the following tools for interacting and extracting information from the webp
 - Do not delete any files that are related to the operating system
 - Understand that for certain commands there won't be any output (example: cd filepath, cd .., etc)
 - If there is no output for after a command executed don't panic, the command executed correctly (example: we are in that directory, we are in parent directory, etc)
-- If there is an error occured when executing a command that will be given to you
+- If there is an error occured while or after executing a command that will be given to you
+- Don't alter the system settings those are core or critical
 
 ## SHELL GUIDELINES
 - Pick the shell according to the operating system
