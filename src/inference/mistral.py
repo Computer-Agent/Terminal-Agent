@@ -1,18 +1,16 @@
 from src.message import AIMessage,BaseMessage,SystemMessage,ImageMessage,HumanMessage,ToolMessage
-from tenacity import retry,stop_after_attempt,retry_if_exception_type
 from requests import RequestException,HTTPError,ConnectionError
+from tenacity import retry,stop_after_attempt,retry_if_exception_type
 from ratelimit import limits,sleep_and_retry
-from httpx import Client,AsyncClient
 from src.inference import BaseInference,Token
+from httpx import Client,AsyncClient
 from pydantic import BaseModel
 from typing import Generator
-from typing import Literal
 from json import loads
 from uuid import uuid4
 import requests
-import base64
 
-class ChatGroq(BaseInference):
+class ChatMistral(BaseInference):
     @sleep_and_retry
     @limits(calls=15,period=60)
     @retry(stop=stop_after_attempt(3),retry=retry_if_exception_type(RequestException))
@@ -20,7 +18,7 @@ class ChatGroq(BaseInference):
         self.headers.update({'Authorization': f'Bearer {self.api_key}'})
         headers=self.headers
         temperature=self.temperature
-        url=self.base_url or "https://api.groq.com/openai/v1/chat/completions"
+        url=self.base_url or "https://api.mistral.ai/v1/chat/completions"
         contents=[]
         for message in messages:
             if isinstance(message,SystemMessage):
@@ -30,22 +28,20 @@ class ChatGroq(BaseInference):
             if isinstance(message,(HumanMessage,AIMessage)):
                 contents.append(message.to_dict())
             if isinstance(message,ImageMessage):
-                text,image=message.content
+                text,image_data=message.content
                 contents.append([
                     {
                         'role':'user',
-                        'content':[
+                        'content':{
                             {
                                 'type':'text',
                                 'text':text
                             },
                             {
                                 'type':'image_url',
-                                'image_url':{
-                                    'url':image
-                                }
+                                'image_url':image_data
                             }
-                        ]
+                        }
                     }
                 ])
 
@@ -69,11 +65,11 @@ class ChatGroq(BaseInference):
             } for tool in self.tools]
         try:
             with Client() as client:
-                response=client.post(url=url,json=payload,headers=headers)
+                response=client.post(url=url,json=payload,headers=headers,timeout=None)
             json_object=response.json()
             # print(json_object)
             if json_object.get('error'):
-                raise HTTPError(json_object['error']['message'])
+                raise Exception(json_object['error']['message'])
             message=json_object['choices'][0]['message']
             usage_metadata=json_object['usage']
             input,output,total=usage_metadata['prompt_tokens'],usage_metadata['completion_tokens'],usage_metadata['total_tokens']
@@ -93,15 +89,15 @@ class ChatGroq(BaseInference):
         except ConnectionError as err:
             print(err)
         exit()
-
+    
     @sleep_and_retry
     @limits(calls=15,period=60)
     @retry(stop=stop_after_attempt(3),retry=retry_if_exception_type(RequestException))
-    async def async_invoke(self, messages: list[BaseMessage],json=False,model:BaseModel=None) -> AIMessage|ToolMessage|BaseModel:
+    async def async_invoke(self, messages: list[BaseMessage],json:bool=False,model:BaseModel=None)->AIMessage|ToolMessage|BaseModel:
         self.headers.update({'Authorization': f'Bearer {self.api_key}'})
         headers=self.headers
         temperature=self.temperature
-        url=self.base_url or "https://api.groq.com/openai/v1/chat/completions"
+        url=self.base_url or "https://api.mistral.ai/v1/chat/completions"
         contents=[]
         for message in messages:
             if isinstance(message,SystemMessage):
@@ -111,22 +107,20 @@ class ChatGroq(BaseInference):
             if isinstance(message,(HumanMessage,AIMessage)):
                 contents.append(message.to_dict())
             if isinstance(message,ImageMessage):
-                text,image=message.content
+                text,image_data=message.content
                 contents.append([
                     {
                         'role':'user',
-                        'content':[
+                        'content':{
                             {
                                 'type':'text',
                                 'text':text
                             },
                             {
                                 'type':'image_url',
-                                'image_url':{
-                                    'url':image
-                                }
+                                'image_url':image_data
                             }
-                        ]
+                        }
                     }
                 ])
 
@@ -150,11 +144,11 @@ class ChatGroq(BaseInference):
             } for tool in self.tools]
         try:
             async with AsyncClient() as client:
-                response=await client.post(url=url,json=payload,headers=headers)
+                response=await client.post(url=url,json=payload,headers=headers,timeout=None)
             json_object=response.json()
             # print(json_object)
             if json_object.get('error'):
-                raise HTTPError(json_object['error']['message'])
+                raise Exception(json_object['error']['message'])
             message=json_object['choices'][0]['message']
             usage_metadata=json_object['usage']
             input,output,total=usage_metadata['prompt_tokens'],usage_metadata['completion_tokens'],usage_metadata['total_tokens']
@@ -188,13 +182,14 @@ class ChatGroq(BaseInference):
             "model": self.model,
             "messages": messages,
             "temperature": temperature,
-            "response_format": {
-                "type": "json_object" if json else "text"
-            },
             "stream":True,
         }
+        if json:
+            payload["response_format"]={
+                "type": "json_object"
+            }
         try:
-            response=requests.post(url=url,json=payload,headers=headers)
+            response=requests.post(url=url,json=payload,headers=headers,timeout=None)
             response.raise_for_status()
             chunks=response.iter_lines(decode_unicode=True)
             for chunk in chunks:
@@ -210,59 +205,10 @@ class ChatGroq(BaseInference):
         exit()
     
     def available_models(self):
-        url='https://api.groq.com/openai/v1/models'
+        url="https://api.mistral.ai/v1/models"
         self.headers.update({'Authorization': f'Bearer {self.api_key}'})
         headers=self.headers
         response=requests.get(url=url,headers=headers)
         response.raise_for_status()
         models=response.json()
-        return [model['id'] for model in models['data'] if model['active']]
-
-class AudioGroq(BaseInference):
-    def __init__(self,mode:Literal['transcriptions','translations']='transcriptions', model: str = '', api_key: str = '', base_url: str = '', temperature: float = 0.5):
-        self.mode=mode
-        super().__init__(model, api_key, base_url, temperature)
-    def invoke(self,file:str='', language:str='en', json:bool=False)->AIMessage:
-        headers={'Authorization': f'Bearer {self.api_key}'}
-        temperature=self.temperature
-        url=self.base_url or f"https://api.groq.com/openai/v1/audio/{self.mode}"
-        payload={
-            "model": self.model,
-            "temperature": temperature,
-            "response_format": {
-                "type": "json_object" if json else "text"
-            },
-            "language": language
-        }
-        files={
-            'file': self.__read_audio(file)
-        }
-        try:
-            with Client() as client:
-                response=client.post(url=url,json=payload,files=files,headers=headers)
-            response.raise_for_status()
-            if json:
-                content=loads(response.text)['text']
-            else:
-                content=response.text
-            return AIMessage(content)
-        except HTTPError as err:
-            err_object=loads(err.response.text)
-            print(f'\nError: {err_object["error"]["message"]}\nStatus Code: {err.response.status_code}')
-        except ConnectionError as err:
-            print(err)
-        exit()
-    
-    def __read_audio(file_name:str):
-        with open(file_name,'rb') as f:
-            audio_data=f.read()
-        return base64.b64encode(audio_data).decode('utf-8')
-    
-    def available_models(self):
-        url='https://api.groq.com/openai/v1/models'
-        self.headers.update({'Authorization': f'Bearer {self.api_key}'})
-        headers=self.headers
-        response=requests.get(url=url,headers=headers)
-        response.raise_for_status()
-        models=response.json()
-        return [model['id'] for model in models['data'] if model['active']]
+        return [model['id'] for model in models['data']]

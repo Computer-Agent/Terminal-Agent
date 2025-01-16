@@ -6,4 +6,5 @@ class AgentState(TypedDict):
     input:str
     agent_data:dict
     output:str
+    route:str
     messages:Annotated[list[BaseMessage],add]

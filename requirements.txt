@@ -4,3 +4,4 @@ termcolor
 requests
 python-dotenv
 tenacity
+ratelimit
