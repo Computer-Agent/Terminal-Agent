@@ -11,6 +11,7 @@ from platform import platform
 from datetime import datetime
 from getpass import getuser
 from src.tool import Tool
+from pathlib import Path
 from os import getcwd
 import json
 
@@ -98,7 +99,7 @@ class TerminalAgent(BaseAgent):
             'current_datetime':datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'actions_prompt':self.registry.actions_prompt(),
             'os':platform(),
-            'cwd':getcwd(),
+            'home_dir':Path.home().as_posix(),
             'user':getuser(),
 
         }

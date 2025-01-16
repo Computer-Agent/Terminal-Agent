@@ -3,7 +3,7 @@ from src.tool import Tool
 from subprocess import run
 
 @Tool('Shell Tool',params=Shell)
-def shell_tool(command: str,shell: str) -> str:
+def shell_tool(shell: str,command: str) -> str:
     '''Executes a shell command on the system and returns the output.'''
     try:
         if shell.lower()=='powershell': #For Windows

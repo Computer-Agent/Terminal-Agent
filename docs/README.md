@@ -55,7 +55,7 @@ To begin using **Terminal Agent**, follow these steps:
 
 ### Usage Example
 
-## **Task: Asking about GPU present in the machine**
+## **Task: Asking about GPU present in the Machine**
 ```plaintext
 Enter your query: Can you tell me which all graphics card I have in this machine?
 Thought: To find out which graphics cards are installed in the machine, we can use the command-line interface to query the system for this information. Since the operating system is Windows, we can utilize the Windows Management Instrumentation Command (WMIC) or use PowerShell commands to achieve this. Here, we'll opt for using PowerShell as it provides a more straightforward and user-friendly output for such queries.
@@ -69,15 +69,15 @@ Thought: Based on the observation, the system has two graphics cards installed: 
 Final Answer: The system has two graphics cards: Intel(R) Iris(R) Xe Graphics and NVIDIA GeForce RTX 4060 .
 ```
 
-### **Task: Asking the time**
+### **Task: Asking the Time**
 ```plaintext
-Enter your query: Can you tell me the time right now                 
-Thought: To find the current time, we can use the date command in the shell, which displays the current date and time.
+Enter your query: Can you tell me the time right now
+Thought: The user wants to know the current time. I can use the `date` command in the shell to get the current time.
 Action Name: Shell Tool
-Action Input: {'command': 'date', 'shell': 'bash'}
-Observation: Thu Jan 16 03:00:54 UTC 2025
-Thought: Since we have the current time, we can now provide the final answer.
-Final Answer: Thursday, January 16, 2025, 03:00:54 UTC
+Action Input: {'shell': 'powershell', 'command': 'Get-Date'}
+Observation: 16 January 2025 09:19:04
+Thought: I have successfully retrieved the current date and time using the `Get-Date` command. Now I can provide the final answer to the user.
+Final Answer: The current date and time is 2025-01-16 09:19:04.
 ```
 
 ## **License**
