@@ -1,6 +1,6 @@
-# Terminal Agent: Shell Command Execution Workflow
+# Terminal Agent: Automating Command-Line Tasks with AI
 
-## Description
+## Overview
 
 **Terminal Agent** is a standalone agent designed to handle and execute shell commands based on user queries. It directly interacts with the terminal environment, performs the necessary shell operations, and returns the results to the user.
 

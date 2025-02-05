@@ -12,7 +12,6 @@ from datetime import datetime
 from getpass import getuser
 from src.tool import Tool
 from pathlib import Path
-from os import getcwd
 import json
 
 tools=[
@@ -28,8 +27,8 @@ class TerminalAgent(BaseAgent):
         self.instructions=self.format_instructions(instructions)
         self.registry=Registry(tools+additional_tools)
         self.system_prompt=read_markdown_file('./src/agent/terminal/prompt/system.md')
-        self.human_prompt=read_markdown_file('./src/agent/terminal/prompt/human.md')
-        self.ai_prompt=read_markdown_file('./src/agent/terminal/prompt/ai.md')
+        self.observation_prompt=read_markdown_file('./src/agent/terminal/prompt/observation.md')
+        self.action_prompt=read_markdown_file('./src/agent/terminal/prompt/action.md')
         self.graph=self.create_graph()
         self.token_usage=token_usage
 
@@ -40,7 +39,6 @@ class TerminalAgent(BaseAgent):
         llm_response=self.llm.invoke(state.get('messages'))
         # print(llm_response.content)
         agent_data=extract_agent_data(llm_response.content)
-        # print(dumps(agent_data,indent=2))
         thought=agent_data.get('Thought')
         route=agent_data.get('Route')
         if self.verbose:
@@ -64,9 +62,9 @@ class TerminalAgent(BaseAgent):
             print(f'Input Tokens: {self.llm.tokens.input} Output Tokens: {self.llm.tokens.output} Total Tokens: {self.llm.tokens.total}')
         # Delete the last message
         state.get('messages').pop()
-        ai_prompt=self.ai_prompt.format(thought=thought,action_name=action_name,action_input=json.dumps(action_input,indent=2),route=route)
-        human_prompt=self.human_prompt.format(observation=observation)
-        messages=[AIMessage(ai_prompt),HumanMessage(human_prompt)]
+        action_prompt=self.action_prompt.format(thought=thought,action_name=action_name,action_input=json.dumps(action_input,indent=2),route=route)
+        observation_prompt=self.observation_prompt.format(observation=observation)
+        messages=[AIMessage(action_prompt),HumanMessage(observation_prompt)]
         return {**state,'agent_data':agent_data,'messages':messages}
     
     def final(self,state:AgentState):
@@ -109,6 +107,7 @@ class TerminalAgent(BaseAgent):
             'input':input,
             'messages':[SystemMessage(system_prompt),HumanMessage(user_prompt)],
             'agent_data':{},
+            'router':'',
             'output':''
         }
         graph_response=self.graph.invoke(state)
