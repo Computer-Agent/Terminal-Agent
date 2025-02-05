@@ -29,6 +29,7 @@ class TerminalAgent(BaseAgent):
         self.system_prompt=read_markdown_file('./src/agent/terminal/prompt/system.md')
         self.observation_prompt=read_markdown_file('./src/agent/terminal/prompt/observation.md')
         self.action_prompt=read_markdown_file('./src/agent/terminal/prompt/action.md')
+        self.answer_prompt=read_markdown_file('./src/agent/terminal/prompt/answer.md')
         self.graph=self.create_graph()
         self.token_usage=token_usage
 
@@ -68,15 +69,26 @@ class TerminalAgent(BaseAgent):
         return {**state,'agent_data':agent_data,'messages':messages}
     
     def final(self,state:AgentState):
-        agent_data=state.get('agent_data')
-        final_answer=agent_data.get('Final Answer')
+        state['messages'].pop() # Remove the last message for modification
+        if self.iteration<self.max_iteration:
+            agent_data=state.get('agent_data')
+            thought=agent_data.get('Thought')
+            final_answer=agent_data.get('Final Answer')
+        else:
+            thought='Looks like I have reached the maximum iteration limit reached.',
+            final_answer='Maximum Iteration reached.'
+        answer_prompt=self.answer_prompt.format(thought=thought,final_answer=final_answer)
+        messages=[AIMessage(answer_prompt)]
         if self.verbose:
             print(colored(f'Final Answer: {final_answer}',color='cyan',attrs=['bold']))
-        return {**state,'output':final_answer}
+        return {**state,'output':final_answer,'messages':messages}
 
     def controller(self,state:AgentState):
-        route=state.get('route')
-        return route.lower()
+        if self.iteration<self.max_iteration:
+            self.iteration+=1
+            return state.get('route').lower()
+        else:
+            return 'final' 
         
     def create_graph(self):
         workflow=StateGraph(AgentState)
