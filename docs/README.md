@@ -95,9 +95,11 @@ Thought: I have successfully retrieved the current date and time using the `Get-
 Final Answer: The current date and time is 2025-01-16 09:19:04.
 ```
 
-## **License**
+## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
+
+For more information about the AGPL-3.0 license, please visit: https://www.gnu.org/licenses/agpl-3.0.en.html
 
 ---
 
