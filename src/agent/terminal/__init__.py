@@ -4,6 +4,7 @@ from src.agent.terminal.registry import Registry
 from langgraph.graph import StateGraph,START,END
 from src.agent.terminal.tools import shell_tool
 from src.agent.terminal.state import AgentState
+from src.memory.episodic import EpisodicMemory
 from src.inference import BaseInference
 from src.agent import BaseAgent
 from termcolor import colored
@@ -19,7 +20,7 @@ tools=[
 ]
 
 class TerminalAgent(BaseAgent):
-    def __init__(self,instructions:list[str]=[],additional_tools:list[Tool]=[],llm:BaseInference=None,verbose:bool=False,max_iteration:int=10,token_usage:bool=False):
+    def __init__(self,instructions:list[str]=[],episodic_memory:EpisodicMemory=None,additional_tools:list[Tool]=[],llm:BaseInference=None,verbose:bool=False,max_iteration:int=10,token_usage:bool=False):
         self.llm=llm
         self.verbose=verbose
         self.max_iteration=max_iteration
@@ -31,6 +32,7 @@ class TerminalAgent(BaseAgent):
         self.action_prompt=read_markdown_file('./src/agent/terminal/prompt/action.md')
         self.answer_prompt=read_markdown_file('./src/agent/terminal/prompt/answer.md')
         self.graph=self.create_graph()
+        self.episodic_memory=episodic_memory
         self.token_usage=token_usage
 
     def format_instructions(self,instructions):
@@ -111,19 +113,24 @@ class TerminalAgent(BaseAgent):
             'os':platform(),
             'home_dir':Path.home().as_posix(),
             'user':getuser(),
-
         }
         system_prompt=self.system_prompt.format(**parameters)
-        user_prompt=f'Task: {input}'
+        # Attach episodic memory to the system prompt 
+        if self.episodic_memory and self.episodic_memory.retrieve(input):
+            system_prompt=self.episodic_memory.attach_memory(system_prompt)
+        human_prompt=f'Task: {input}'
         state={
             'input':input,
-            'messages':[SystemMessage(system_prompt),HumanMessage(user_prompt)],
+            'messages':[SystemMessage(system_prompt),HumanMessage(human_prompt)],
             'agent_data':{},
             'router':'',
             'output':''
         }
-        graph_response=self.graph.invoke(state)
-        return graph_response.get('output')
+        response=self.graph.invoke(state)
+        # Extract and store the key takeaways of the task performed by the agent
+        if self.episodic_memory:
+            self.episodic_memory.store(response.get('messages'))
+        return response.get('output')
 
     def stream(self,input:str):
         pass
