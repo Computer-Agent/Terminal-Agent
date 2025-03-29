@@ -1,7 +1,9 @@
-from src.agent.terminal.tools.views import Shell
+from src.agent.terminal.tools.views import Shell,Python
 from src.tool import Tool
 from subprocess import run
 from platform import system
+import sys
+import io
 
 os=system()
 
@@ -27,6 +29,20 @@ def shell_tool(shell: str=None,command: str='') -> str:
         if response.returncode==0:
             return response.stdout.strip()
         else:
-            return response.stderr.strip()
+            return f'Error: {response.stderr.strip()}'
     except Exception as e:
-        return str(e)
+        return f'Error: {e}'
+    
+@Tool('Python Tool',params=Python)
+def python_tool(script: str) -> str:
+    '''Executes a python script and returns the output.'''
+    stdout=sys.stdout
+    sys.stdout=io.StringIO()
+    try:
+        exec(script)
+        output=sys.stdout.getvalue()
+    except Exception as e:
+        output=f'Error: {e}'
+    finally:
+        sys.stdout=stdout
+    return output.strip()

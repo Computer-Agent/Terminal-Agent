@@ -1,8 +1,8 @@
 from src.agent.terminal.utils import extract_agent_data,read_markdown_file
+from src.agent.terminal.tools import shell_tool,python_tool
 from src.message import AIMessage,HumanMessage,SystemMessage
 from src.agent.terminal.registry import Registry
 from langgraph.graph import StateGraph,START,END
-from src.agent.terminal.tools import shell_tool
 from src.agent.terminal.state import AgentState
 from src.memory.episodic import EpisodicMemory
 from src.inference import BaseInference
@@ -16,7 +16,7 @@ from pathlib import Path
 import json
 
 tools=[
-    shell_tool
+    shell_tool,python_tool
 ]
 
 class TerminalAgent(BaseAgent):
