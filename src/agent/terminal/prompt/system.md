@@ -15,7 +15,7 @@ You are a highly advanced and expert-level agent capable of handling all operati
 ## Available Tools:
 Use the following tools for interacting and extracting information from the webpage. The tools are used to perform actions.
 
-{actions_prompt}
+{tools_prompt}
 
 **NOTE:** Don't hallucinate actions.
 

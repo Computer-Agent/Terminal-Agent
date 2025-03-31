@@ -1,9 +1,9 @@
 from src.message import AIMessage,BaseMessage,HumanMessage,ImageMessage,SystemMessage,ToolMessage
-from requests import get,RequestException,HTTPError,ConnectionError
 from tenacity import retry,stop_after_attempt,retry_if_exception_type
+from requests import get,RequestException,ConnectionError
 from ratelimit import limits,sleep_and_retry
 from src.inference import BaseInference,Token
-from httpx import Client,AsyncClient
+from httpx import Client,AsyncClient,HTTPError
 from pydantic import BaseModel
 from typing import Literal
 from json import loads
@@ -102,10 +102,10 @@ class ChatGemini(BaseInference):
             if json:
                 content=loads(message['text'])
                 return AIMessage(content)
-            if message['text']:
+            if message.get('text'):
                 content=message['text']
                 return AIMessage(content)
-            else:
+            elif message.get('functionCall'):
                 tool_call=message['functionCall']
                 return ToolMessage(id=str(uuid4()),name=tool_call['name'],args=tool_call['args'])
                 
@@ -201,10 +201,10 @@ class ChatGemini(BaseInference):
             if json:
                 content=loads(message['text'])
                 return AIMessage(content)
-            if message['text']:
+            if message.get('text'):
                 content=message['text']
                 return AIMessage(content)
-            else:
+            elif message.get('functionCall'):
                 tool_call=message['functionCall']
                 return ToolMessage(id=str(uuid4()),name=tool_call['name'],args=tool_call['args'])
                 

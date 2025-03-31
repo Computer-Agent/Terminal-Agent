@@ -9,10 +9,15 @@ class Token(BaseModel):
     total: int
 
 structured_output_prompt='''
+### JSON Response Format:
 Integrate the JSON output as part of the structured response, ensuring it strictly follows the provided schema.
 ```json
 {json_schema}
 ```
+If there is code block inside the JSON adheres to the following formatting guidelines:
+1. Escape Newlines: `\n` should be `\n`.
+2. Escape Quotes: `'` should be `\'` and `"` should be `\"`.
+3. Escape Backslashes: `\` should be `\\`.
 Validate all fields, use `null` or empty values for missing data, and format the JSON in a clear, indented code block.
 '''
 
@@ -41,4 +46,3 @@ class BaseInference(ABC):
 
     def structured(self,message:SystemMessage,model:BaseModel):
         return f'{message.content}\n{structured_output_prompt.format(json_schema=model.model_json_schema())}'
-

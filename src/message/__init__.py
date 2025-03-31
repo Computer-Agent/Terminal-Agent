@@ -5,11 +5,16 @@ import base64
 import re
 
 class BaseMessage(ABC):
+    def __init__(self):
+        self.role=None
+        self.content=None
+
     def to_dict(self)->dict[str,str]:
         return {
             'role': self.role,
             'content': f'''{self.content}'''
         }
+    
     def __repr__(self):
         class_name = self.__class__.__name__
         attributes = ", ".join(f"{key}={value}" for key, value in self.__dict__.items())
@@ -31,12 +36,15 @@ class SystemMessage(BaseMessage):
         self.content=content
 
 class ImageMessage(BaseMessage):
-    def __init__(self,text:str=None,image_path:str=None,image_obj:str=None):
+    def __init__(self,text:str='',image_path:str=None,image_obj:str=None,image_encoded:str=None,mime_type:str='image/png'):
         self.role='user'
-        if image_obj is not None or image_path is None:
-            self.content=(text,self.__encoder(image_obj))
-        elif image_path is not None or image_obj is None:
-            self.content=(text,self.__image_to_base64(image_path))
+        self.mime_type=mime_type
+        if image_obj is not None:
+            self.content=(text,self.encode_image(image_obj))
+        elif image_path is not None:
+            self.content=(text,self.image_to_base64(image_path))
+        elif image_encoded is not None:
+            self.content=(text,image_encoded)
         else:
             raise Exception('image_path and image_base_64 cannot be both None or both not None')
     
@@ -48,7 +56,7 @@ class ImageMessage(BaseMessage):
         file_path_pattern = re.compile(r'^([./~]|([a-zA-Z]:)|\\|//)?\.?\/?[a-zA-Z0-9._-]+(\.[a-zA-Z0-9]+)?$')
         return file_path_pattern.match(image_path) is not None
 
-    def __image_to_base64(self,image_source: str) -> str:
+    def image_to_base64(self,image_source: str) -> str:
         if self.__is_url(image_source):
             response = requests.get(image_source)
             bytes = BytesIO(response.content)
@@ -58,10 +66,13 @@ class ImageMessage(BaseMessage):
                 image_bytes = image.read()
         else:
             raise ValueError("Invalid image source. Must be a URL or file path.")
-        return base64.b64encode(image_bytes).decode('utf-8')
+        return self.encode_image(image_bytes)
     
-    def __encoder(self,b:bytes):
+    def encode_image(self,b:bytes):
         return base64.b64encode(b).decode('utf-8')
+
+    def decode_image(self,b:str):
+        return base64.b64decode(b.encode('utf-8'))
 
 class ToolMessage(BaseMessage):
     def __init__(self,id:str,name:str,args:dict):

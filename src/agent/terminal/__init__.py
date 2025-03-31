@@ -1,11 +1,11 @@
 from src.agent.terminal.utils import extract_agent_data,read_markdown_file
 from src.agent.terminal.tools import shell_tool,python_tool
 from src.message import AIMessage,HumanMessage,SystemMessage
-from src.agent.terminal.registry import Registry
 from langgraph.graph import StateGraph,START,END
 from src.agent.terminal.state import AgentState
 from src.memory.episodic import EpisodicMemory
 from src.inference import BaseInference
+from src.tool.registry import Registry
 from src.agent import BaseAgent
 from termcolor import colored
 from platform import platform
@@ -57,8 +57,8 @@ class TerminalAgent(BaseAgent):
         if self.verbose:
             print(colored(f'Action Name: {action_name}',color='blue',attrs=['bold']))
             print(colored(f'Action Input: {action_input}',color='blue',attrs=['bold']))
-        action_result=self.registry.execute(name=action_name,params=action_input)
-        observation=action_result.content
+        tool_result=self.registry.execute(name=action_name,input=action_input)
+        observation=tool_result.content
         if self.verbose:
             print(colored(f'Observation: {observation}',color='green',attrs=['bold']))
         if self.verbose and self.token_usage:
@@ -109,7 +109,7 @@ class TerminalAgent(BaseAgent):
         parameters={
             'instructions':self.instructions,
             'current_datetime':datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'actions_prompt':self.registry.actions_prompt(),
+            'tools_prompt':self.registry.tools_prompt(),
             'os':platform(),
             'home_dir':Path.home().as_posix(),
             'user':getuser(),

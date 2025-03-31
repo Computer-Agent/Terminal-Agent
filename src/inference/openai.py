@@ -13,7 +13,7 @@ from uuid import uuid4
 import mimetypes
 import requests
 
-class ChatGroq(BaseInference):
+class ChatOpenAI(BaseInference):
     @sleep_and_retry
     @limits(calls=15,period=60)
     @retry(stop=stop_after_attempt(3),retry=retry_if_exception_type(RequestException))
@@ -21,7 +21,7 @@ class ChatGroq(BaseInference):
         self.headers.update({'Authorization': f'Bearer {self.api_key}'})
         headers=self.headers
         temperature=self.temperature
-        url=self.base_url or "https://api.groq.com/openai/v1/chat/completions"
+        url=self.base_url or "https://api.openai.com/v1/chat/completions"
         contents=[]
         for message in messages:
             if isinstance(message,SystemMessage):
@@ -85,7 +85,7 @@ class ChatGroq(BaseInference):
                 return AIMessage(loads(message.get('content')))
             if message.get('content'):
                 return AIMessage(message.get('content'))
-            elif message.get('tool_calls'):
+            if message.get('tool_calls'):
                 tool_call=message.get('tool_calls')[0]['function']
                 return ToolMessage(id=str(uuid4()),name=tool_call['name'],args=tool_call['arguments']) 
         except HTTPError as err:
@@ -102,7 +102,7 @@ class ChatGroq(BaseInference):
         self.headers.update({'Authorization': f'Bearer {self.api_key}'})
         headers=self.headers
         temperature=self.temperature
-        url=self.base_url or "https://api.groq.com/openai/v1/chat/completions"
+        url=self.base_url or "https://api.openai.com/v1/chat/completions"
         contents=[]
         for message in messages:
             if isinstance(message,SystemMessage):
@@ -183,7 +183,7 @@ class ChatGroq(BaseInference):
         self.headers.update({'Authorization': f'Bearer {self.api_key}'})
         headers=self.headers
         temperature=self.temperature
-        url=self.base_url or "https://api.groq.com/openai/v1/chat/completions"
+        url=self.base_url or "https://api.openai.com/v1/chat/completions"
         messages=[message.to_dict() for message in messages]
         payload={
             "model": self.model,
@@ -211,7 +211,7 @@ class ChatGroq(BaseInference):
         exit()
     
     def available_models(self):
-        url='https://api.groq.com/openai/v1/models'
+        url='https://api.openai.com/v1/models'
         self.headers.update({'Authorization': f'Bearer {self.api_key}'})
         headers=self.headers
         response=requests.get(url=url,headers=headers)
@@ -219,7 +219,7 @@ class ChatGroq(BaseInference):
         models=response.json()
         return [model['id'] for model in models['data'] if model['active']]
 
-class AudioGroq(BaseInference):
+class AudioOpenAI(BaseInference):
     def __init__(self,mode:Literal['transcriptions','translations']='transcriptions', model: str = '', api_key: str = '', base_url: str = '', temperature: float = 0.5):
         self.mode=mode
         super().__init__(model, api_key, base_url, temperature)
@@ -227,7 +227,7 @@ class AudioGroq(BaseInference):
     def invoke(self,file_path:str='', language:str='en', json:bool=False)->AIMessage:
         path=Path(file_path)
         headers={'Authorization': f'Bearer {self.api_key}'}
-        url=self.base_url or f"https://api.groq.com/openai/v1/audio/{self.mode}"
+        url=self.base_url or f"https://api.openai.com/v1/audio/{self.mode}"
         data={
             "model": self.model,
             "temperature": self.temperature,

@@ -80,7 +80,7 @@ class ChatMistral(BaseInference):
                 return AIMessage(loads(message.get('content')))
             if message.get('content'):
                 return AIMessage(message.get('content'))
-            else:
+            elif message.get('tool_calls'):
                 tool_call=message.get('tool_calls')[0]['function']
                 return ToolMessage(id=str(uuid4()),name=tool_call['name'],args=tool_call['arguments']) 
         except HTTPError as err:
@@ -159,7 +159,7 @@ class ChatMistral(BaseInference):
                 return AIMessage(loads(message.get('content')))
             if message.get('content'):
                 return AIMessage(message.get('content'))
-            else:
+            elif message.get('tool_calls'):
                 tool_call=message.get('tool_calls')[0]['function']
                 return ToolMessage(id=str(uuid4()),name=tool_call['name'],args=tool_call['arguments']) 
         except HTTPError as err:
