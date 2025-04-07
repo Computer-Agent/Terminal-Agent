@@ -76,7 +76,7 @@ Your response should follow this strict format:
 <Option>
   <Thought>Explanation of why you are confident that the final answer is ready.</Thought>
   <Final-Answer>Provide the final answer.</Final-Answer>
-  <Route>Final</Route>
+  <Route>Answer</Route>
 </Option>
 
 ---

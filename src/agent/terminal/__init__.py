@@ -70,7 +70,7 @@ class TerminalAgent(BaseAgent):
         messages=[AIMessage(action_prompt),HumanMessage(observation_prompt)]
         return {**state,'agent_data':agent_data,'messages':messages}
     
-    def final(self,state:AgentState):
+    def answer(self,state:AgentState):
         state['messages'].pop() # Remove the last message for modification
         if self.iteration<self.max_iteration:
             agent_data=state.get('agent_data')
@@ -96,12 +96,12 @@ class TerminalAgent(BaseAgent):
         workflow=StateGraph(AgentState)
         workflow.add_node('reason',self.reason)
         workflow.add_node('action',self.action)
-        workflow.add_node('final',self.final)
+        workflow.add_node('answer',self.answer)
 
         workflow.add_edge(START,'reason')
         workflow.add_conditional_edges('reason',self.controller)
         workflow.add_edge('action','reason')
-        workflow.add_edge('final',END)
+        workflow.add_edge('answer',END)
 
         return workflow.compile(debug=False)
 

@@ -10,7 +10,7 @@ def extract_agent_data(text):
     # Dictionary to store extracted values
     result = {}
     # Check if it's Option 1 (Action-based)
-    if re.search(r"<Action-Name>", text):
+    if re.search(r"<Route>Action<\/Route>", text):
         # Extract Thought
         thought_match = re.search(r"<Thought>(.*?)<\/Thought>", text, re.DOTALL)
         if thought_match:
@@ -34,7 +34,7 @@ def extract_agent_data(text):
         if route_match:
             result['Route'] = route_match.group(1).strip()
     # Check if it's Option 2 (Final Answer)
-    elif re.search(r"<Final-Answer>", text):
+    elif re.search(r"<Route>Answer<\/Route>", text):
         # Extract Thought
         thought_match = re.search(r"<Thought>(.*?)<\/Thought>", text, re.DOTALL)
         if thought_match:
