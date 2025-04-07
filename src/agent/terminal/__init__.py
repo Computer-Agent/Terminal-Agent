@@ -90,7 +90,7 @@ class TerminalAgent(BaseAgent):
             self.iteration+=1
             return state.get('route').lower()
         else:
-            return 'final' 
+            return 'answer' 
         
     def create_graph(self):
         workflow=StateGraph(AgentState)
