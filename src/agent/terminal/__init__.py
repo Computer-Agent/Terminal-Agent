@@ -39,14 +39,14 @@ class TerminalAgent(BaseAgent):
         return '\n'.join([f'{i+1}. {instruction}' for (i,instruction) in enumerate(instructions)])
 
     def reason(self,state:AgentState):
-        llm_response=self.llm.invoke(state.get('messages'))
+        ai_message=self.llm.invoke(state.get('messages'))
         # print(llm_response.content)
-        agent_data=extract_agent_data(llm_response.content)
+        agent_data=extract_agent_data(ai_message.content)
         thought=agent_data.get('Thought')
         route=agent_data.get('Route')
         if self.verbose:
             print(colored(f'Thought: {thought}',color='light_magenta',attrs=['bold']))
-        return {**state,'agent_data': agent_data,'route':route}
+        return {**state,'agent_data': agent_data,'messages':[ai_message],'route':route}
 
     def action(self,state:AgentState):
         agent_data=state.get('agent_data')
