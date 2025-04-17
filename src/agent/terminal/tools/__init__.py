@@ -42,7 +42,7 @@ def python_tool(mode:Literal['script','package']='script',script: str='',package
         stdout=sys.stdout
         sys.stdout=io.StringIO()
         try:
-            exec(script)
+            exec(script,globals={'__builtins__':__builtins__})
             output=sys.stdout.getvalue()
         except Exception as e:
             output=f'Error: {e}'
