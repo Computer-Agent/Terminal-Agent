@@ -1,5 +1,5 @@
 from src.agent.terminal.utils import extract_agent_data,read_markdown_file
-from src.agent.terminal.tools import shell_tool,python_tool
+from src.agent.terminal.tools import shell_tool,python_tool,done_tool
 from src.message import AIMessage,HumanMessage,SystemMessage
 from langgraph.graph import StateGraph,START,END
 from src.agent.terminal.state import AgentState
@@ -16,7 +16,8 @@ from pathlib import Path
 import json
 
 tools=[
-    shell_tool,python_tool
+    shell_tool,python_tool,
+    done_tool
 ]
 
 class TerminalAgent(BaseAgent):
@@ -42,18 +43,22 @@ class TerminalAgent(BaseAgent):
         ai_message=self.llm.invoke(state.get('messages'))
         # print(llm_response.content)
         agent_data=extract_agent_data(ai_message.content)
+        evaluate=agent_data.get('Evaluate')
+        memory=agent_data.get('Memory')
         thought=agent_data.get('Thought')
-        route=agent_data.get('Route')
         if self.verbose:
+            print(colored(f'Evaluate: {evaluate}',color='light_yellow',attrs=['bold']))
+            print(colored(f'Memory: {memory}',color='light_green',attrs=['bold']))
             print(colored(f'Thought: {thought}',color='light_magenta',attrs=['bold']))
-        return {**state,'agent_data': agent_data,'messages':[ai_message],'route':route}
+        return {**state,'agent_data': agent_data,'messages':[ai_message]}
 
     def action(self,state:AgentState):
         agent_data=state.get('agent_data')
+        evaluate=agent_data.get('Evaluate')
+        memory=agent_data.get('Memory')
         thought=agent_data.get('Thought')
         action_name=agent_data.get('Action Name')
         action_input=agent_data.get('Action Input')
-        route=agent_data.get('Route')
         if self.verbose:
             print(colored(f'Action Name: {action_name}',color='blue',attrs=['bold']))
             print(colored(f'Action Input: {action_input}',color='blue',attrs=['bold']))
@@ -65,7 +70,7 @@ class TerminalAgent(BaseAgent):
             print(f'Input Tokens: {self.llm.tokens.input} Output Tokens: {self.llm.tokens.output} Total Tokens: {self.llm.tokens.total}')
         # Delete the last message
         state.get('messages').pop()
-        action_prompt=self.action_prompt.format(thought=thought,action_name=action_name,action_input=json.dumps(action_input,indent=2),route=route)
+        action_prompt=self.action_prompt.format(evaluate=evaluate,memory=memory,thought=thought,action_name=action_name,action_input=json.dumps(action_input,indent=2))
         observation_prompt=self.observation_prompt.format(observation=observation)
         messages=[AIMessage(action_prompt),HumanMessage(observation_prompt)]
         return {**state,'agent_data':agent_data,'messages':messages}
@@ -74,23 +79,40 @@ class TerminalAgent(BaseAgent):
         state['messages'].pop() # Remove the last message for modification
         if self.iteration<self.max_iteration:
             agent_data=state.get('agent_data')
+            evaluate=agent_data.get("Evaluate")
+            memory=agent_data.get('Memory')
             thought=agent_data.get('Thought')
-            final_answer=agent_data.get('Final Answer')
+            action_name=agent_data.get('Action Name')
+            action_input=agent_data.get('Action Input')
+            action_result=self.registry.execute(action_name,action_input)
+            final_answer=action_result.content
         else:
+            evaluate='I have reached the maximum iteration limit.'
+            memory='I have reached the maximum iteration limit. Cannot procced further.'
             thought='Looks like I have reached the maximum iteration limit reached.',
+            action_name='Done Tool'
+            action_input='{"answer":"Maximum Iteration reached."}'
             final_answer='Maximum Iteration reached.'
-        answer_prompt=self.answer_prompt.format(thought=thought,final_answer=final_answer)
+        answer_prompt=self.answer_prompt.format(**{
+            'memory':memory,
+            'evaluate':evaluate,
+            'thought':thought,
+            'final_answer':final_answer
+        })
         messages=[AIMessage(answer_prompt)]
         if self.verbose:
             print(colored(f'Final Answer: {final_answer}',color='cyan',attrs=['bold']))
         return {**state,'output':final_answer,'messages':messages}
 
-    def controller(self,state:AgentState):
+    def main_controller(self,state:AgentState):
+        "Route to the next node"
         if self.iteration<self.max_iteration:
             self.iteration+=1
-            return state.get('route').lower()
-        else:
-            return 'answer' 
+            agent_data=state.get('agent_data')
+            action_name=agent_data.get('Action Name')
+            if action_name!='Done Tool':
+                return 'action'
+        return 'answer'
         
     def create_graph(self):
         workflow=StateGraph(AgentState)
@@ -99,7 +121,7 @@ class TerminalAgent(BaseAgent):
         workflow.add_node('answer',self.answer)
 
         workflow.add_edge(START,'reason')
-        workflow.add_conditional_edges('reason',self.controller)
+        workflow.add_conditional_edges('reason',self.main_controller)
         workflow.add_edge('action','reason')
         workflow.add_edge('answer',END)
 

@@ -1,4 +1,4 @@
-from src.agent.terminal.tools.views import Shell,Python
+from src.agent.terminal.tools.views import Shell,Python,Done
 from typing import Literal
 from src.tool import Tool
 from subprocess import run,check_call
@@ -8,6 +8,11 @@ import sys
 import io
 
 os=system()
+
+@Tool('Done Tool',params=Done)
+def done_tool(content:str):
+    '''To indicate that the task is completed'''
+    return content
 
 @Tool('Shell Tool',params=Shell)
 def shell_tool(shell: str=None,cmd: str='') -> str:
