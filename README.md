@@ -111,4 +111,4 @@ Feel free to fork the repository and contribute! If you encounter any issues or 
 
 For queries or support, please reach out via GitHub Issues.
 
-E-mail: jeogeoalukka@gmail.com
+E-mail: <jeogeoalukka@gmail.com>, <yaseenap0001@gmail.com>
